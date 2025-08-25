@@ -1,0 +1,38 @@
+# HoneyPort AI-Powered Honeypot Dependencies
+
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+jinja2==3.1.2
+
+# AI/ML Libraries
+scikit-learn==1.3.2
+numpy==1.24.3
+joblib==1.3.2
+
+# Cryptography & Blockchain
+cryptography==41.0.7
+hashlib2==1.0.1
+
+# Web3 & Solidity Integration
+web3==6.11.3
+py-solc-x==1.12.0
+eth-account==0.8.0
+eth-tester==0.8.0b3
+
+# Advanced AI Dependencies
+torch>=1.13.0
+torchvision>=0.14.0
+scikit-learn>=1.2.0
+pandas>=1.5.0
+geoip2>=4.6.0
+
+# Networking & HTTP
+aiohttp==3.9.1
+requests==2.31.0
+
+# Configuration & Utilities
+pyyaml==6.0.1
+python-dotenv==1.0.0
+rich==13.7.0

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoneyPort Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/dashboard.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1><i class="fas fa-shield-alt"></i> HoneyPort Dashboard</h1>
+                <div class="header-info">
+                    <span class="user-info">Welcome, {{ username }}</span>
+                    <span class="status-indicator online">ONLINE</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Stats Overview -->
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-bug"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-attacks">0</h3>
+                            <p>Total Attacks</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="unique-attackers">0</h3>
+                            <p>Unique Attackers</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="blocked-ips">0</h3>
+                            <p>Blocked IPs</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="ai-adaptations">0</h3>
+                            <p>AI Adaptations</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Live Events Feed -->
+                <section class="panel events-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-stream"></i> Live Events</h2>
+                        <button class="refresh-btn" onclick="refreshEvents()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="panel-content">
+                        <div id="events-feed" class="events-feed">
+                            <div class="loading">Loading events...</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AI Behavior Status -->
+                <section class="panel ai-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-brain"></i> AI Behavior</h2>
+                        <div class="ai-status" id="ai-status">
+                            <span class="behavior-indicator" id="current-behavior">Realistic</span>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="behavior-chart">
+                            <canvas id="behaviorChart" width="300" height="200"></canvas>
+                        </div>
+                        <div class="ai-controls">
+                            <button class="btn btn-primary" onclick="retrainAI()">
+                                <i class="fas fa-cog"></i> Retrain Models
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Blockchain Verification -->
+                <section class="panel blockchain-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-link"></i> Blockchain</h2>
+                        <div class="verification-status" id="blockchain-status">
+                            <i class="fas fa-check-circle"></i> Verified
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="blockchain-stats">
+                            <div class="stat-row">
+                                <span>Total Blocks:</span>
+                                <span id="total-blocks">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Chain Hash:</span>
+                                <span id="chain-hash" class="hash-display">Loading...</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Smart Contract:</span>
+                                <span id="smart-contract-status" class="status-indicator">Checking...</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Web3 Connected:</span>
+                                <span id="web3-status" class="status-indicator">Checking...</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Contract Address:</span>
+                                <span id="contract-address" class="hash-display">N/A</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Account Balance:</span>
+                                <span id="account-balance">0.0 ETH</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Last Verification:</span>
+                                <span id="last-verification">Never</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="verifyBlockchain()">
+                            <i class="fas fa-shield-alt"></i> Verify Chain
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Attack Types Chart -->
+                <section class="panel chart-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-chart-pie"></i> Attack Types</h2>
+                    </div>
+                    <div class="panel-content">
+                        <canvas id="attackTypesChart" width="400" height="300"></canvas>
+                    </div>
+                </section>
+
+                <!-- Alerts Panel -->
+                <section class="panel alerts-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-exclamation-triangle"></i> Active Alerts</h2>
+                        <span class="alert-count" id="alert-count">0</span>
+                    </div>
+                    <div class="panel-content">
+                        <div id="alerts-list" class="alerts-list">
+                            <div class="no-alerts">No active alerts</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- System Info -->
+                <section class="panel system-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-server"></i> System Status</h2>
+                    </div>
+                    <div class="panel-content">
+                        <div class="system-stats">
+                            <div class="stat-row">
+                                <span>Uptime:</span>
+                                <span id="system-uptime">0h 0m</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Current Behavior:</span>
+                                <span id="system-behavior" class="behavior-tag">Realistic</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Last Attack:</span>
+                                <span id="last-attack">Never</span>
+                            </div>
+                        </div>
+                        <div class="system-controls">
+                            <button class="btn btn-success" onclick="exportLogs()">
+                                <i class="fas fa-download"></i> Export Logs
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

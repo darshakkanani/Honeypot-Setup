@@ -1,0 +1,83 @@
+honeyport_project/
+│── README.md                     # Documentation (setup, usage, architecture)
+│── requirements.txt              # Python dependencies
+│── config.yaml                   # Central config (ports, DB, blockchain settings, AI params)
+│── run.py                        # Main entry point (starts honeyport + dashboard + fake site)
+│
+├── core/                         # Core Honeyport Logic
+│   │── __init__.py
+│   │── honeyport.py              # Main honeyport listener, connection capture
+│   │── connection_handler.py     # Handles attacker requests, redirections
+│   │── ai_behavior.py            # AI model for dynamic response/adaptation
+│   │── anomaly_detector.py       # AI-based anomaly & attacker profile detection
+│   │── session_manager.py        # Track attacker sessions (tokens, IPs, etc.)
+│   │── alert_system.py           # Triggers alerts (email, Slack, console)
+│
+├── blockchain/                   # Blockchain Logging System
+│   │── __init__.py
+│   │── blockchain.py             # Blockchain core (block structure, mining)
+│   │── ledger.json               # Local immutable log storage
+│   │── log_manager.py            # Interface for writing/reading blockchain logs
+│   │── verifier.py               # Verifies chain integrity & detects tampering
+│
+├── logs/                         # Secure Logs
+│   │── raw_logs/                 # Captured raw logs (before blockchain commit)
+│   │── processed/                # Normalized & enriched logs
+│   │── alerts/                   # Security alerts & reports
+│
+├── ai_models/                    # AI Models (Dynamic Behavior & Detection)
+│   │── honeypot_model.pkl        # Trained ML/DL model for adaptive honeyport
+│   │── anomaly_model.pkl         # AI anomaly detection model
+│   │── trainer.py                # Script for training AI models
+│   │── feature_extraction.py     # Converts logs into features for ML
+│
+├── dashboard/                    # Organization Web Dashboard
+│   │── __init__.py
+│   │── app.py                    # Flask/FastAPI app for dashboard
+│   │── routes/                   # Dashboard Routes
+│   │   │── __init__.py
+│   │   │── auth.py               # Admin login/logout
+│   │   │── logs.py               # View captured logs
+│   │   │── blockchain.py         # View/verify blockchain entries
+│   │   │── ai_insights.py        # AI-based insights (attacker profiles, anomaly reports)
+│   │   │── alerts.py             # Alerts & notifications
+│   │
+│   │── templates/                # HTML templates
+│   │   │── base.html
+│   │   │── dashboard.html
+│   │   │── logs.html
+│   │   │── blockchain.html
+│   │   │── alerts.html
+│   │   │── ai_insights.html
+│   │
+│   │── static/                   # CSS, JS, images
+│       │── css/
+│       │   │── style.css
+│       │── js/
+│           │── dashboard.js
+│
+├── attacker_site/                # Fake Attacker-facing Login Portal
+│   │── __init__.py
+│   │── app.py                    # Flask app for fake login page
+│   │── templates/
+│   │   │── login.html            # Fake login page (captures creds)
+│   │   │── error.html            # Fake error messages
+│   │── static/
+│       │── css/
+│       │   │── fake_style.css
+│       │── js/
+│           │── fake_logic.js
+│
+├── utils/                        # Utility Functions
+│   │── __init__.py
+│   │── encryption.py             # Encrypt sensitive log data
+│   │── logger.py                 # Custom logging module
+│   │── helpers.py                # Misc helper functions
+│   │── config_loader.py          # Load YAML/JSON configs
+│
+└── tests/                        # Unit & Integration Tests
+    │── test_honeyport.py
+    │── test_blockchain.py
+    │── test_ai.py
+    │── test_dashboard.py
+    │── test_attacker_site.py
