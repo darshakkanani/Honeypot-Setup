@@ -1,0 +1,43 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    curl \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY honeypot-system/requirements.txt ./requirements.txt
+COPY shared-utils/database/requirements.txt ./shared-requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r shared-requirements.txt
+
+# Copy application code
+COPY honeypot-system/ ./
+COPY shared-utils/ ./shared-utils/
+
+# Create necessary directories
+RUN mkdir -p logs config data
+
+# Create non-root user for security
+RUN useradd -m -u 1000 honeypot && \
+    chown -R honeypot:honeypot /app
+USER honeypot
+
+# Expose honeypot ports
+EXPOSE 2222 8080 2121 2323
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import socket; s=socket.socket(); s.connect(('localhost', 2222)); s.close()" || exit 1
+
+# Start the honeypot engine
+CMD ["python", "main.py"]

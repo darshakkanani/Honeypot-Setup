@@ -1,0 +1,222 @@
+version: '3.8'
+
+services:
+  # Production database with persistence and backups
+  database:
+    image: postgres:15-alpine
+    container_name: securehoney-db-prod
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+      - ./backups:/backups
+      - ./admin-panel/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./shared-utils/database/postgresql_types.sql:/docker-entrypoint-initdb.d/00-types.sql
+      - ./docker/init-scripts:/docker-entrypoint-initdb.d/scripts
+    networks:
+      - securehoney-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  # Redis with persistence
+  redis:
+    image: redis:7-alpine
+    container_name: securehoney-redis-prod
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - securehoney-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.25'
+
+  # Honeypot Engine
+  honeypot:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.honeypot
+    container_name: securehoney-honeypot-prod
+    environment:
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - LOG_LEVEL=${LOG_LEVEL}
+    ports:
+      - "${HONEYPOT_SSH_PORT}:2222"
+      - "${HONEYPOT_HTTP_PORT}:8080"
+      - "${HONEYPOT_FTP_PORT}:2121"
+      - "${HONEYPOT_TELNET_PORT}:2323"
+    volumes:
+      - ./logs:/app/logs
+      - ./honeypot-system/config:/app/config:ro
+    networks:
+      - securehoney-network
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Admin Panel Backend
+  admin-backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.admin-backend
+    container_name: securehoney-admin-backend-prod
+    environment:
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - LOG_LEVEL=${LOG_LEVEL}
+    volumes:
+      - ./logs:/app/logs
+      - ./admin-panel/backend/config:/app/config:ro
+    networks:
+      - securehoney-network
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Admin Panel Frontend
+  admin-frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.admin-frontend
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL}
+        - REACT_APP_ENV=${REACT_APP_ENV}
+    container_name: securehoney-admin-frontend-prod
+    networks:
+      - securehoney-network
+    depends_on:
+      - admin-backend
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+
+  # Nginx Reverse Proxy with SSL
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.nginx
+    container_name: securehoney-nginx-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    networks:
+      - securehoney-network
+    depends_on:
+      - admin-frontend
+      - admin-backend
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+
+  # Database backup service
+  db-backup:
+    image: postgres:15-alpine
+    container_name: securehoney-backup
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./backups:/backups
+      - ./docker/scripts/backup.sh:/backup.sh:ro
+    networks:
+      - securehoney-network
+    depends_on:
+      - database
+    command: |
+      sh -c '
+        while true; do
+          sleep 86400  # 24 hours
+          /backup.sh
+        done
+      '
+    restart: always
+
+  # Log rotation service
+  logrotate:
+    image: alpine:latest
+    container_name: securehoney-logrotate
+    volumes:
+      - ./logs:/logs
+      - ./docker/logrotate/logrotate.conf:/etc/logrotate.conf:ro
+    command: |
+      sh -c '
+        apk add --no-cache logrotate
+        while true; do
+          sleep 3600  # 1 hour
+          logrotate /etc/logrotate.conf
+        done
+      '
+    restart: always
+
+volumes:
+  postgres_data_prod:
+    driver: local
+  redis_data_prod:
+    driver: local
+
+networks:
+  securehoney-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,45 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY admin-panel/backend/requirements.txt ./requirements.txt
+COPY admin-panel/database/requirements.txt ./database-requirements.txt
+COPY shared-utils/database/requirements.txt ./shared-requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r database-requirements.txt
+RUN pip install --no-cache-dir -r shared-requirements.txt
+
+# Copy application code
+COPY admin-panel/backend/ ./
+COPY admin-panel/database/ ./database/
+COPY shared-utils/ ./shared-utils/
+
+# Create necessary directories
+RUN mkdir -p logs config
+
+# Create non-root user for security
+RUN useradd -m -u 1000 admin && \
+    chown -R admin:admin /app
+USER admin
+
+# Expose backend port
+EXPOSE 5001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5001/api/health || exit 1
+
+# Start the backend server
+CMD ["python", "app.py"]
